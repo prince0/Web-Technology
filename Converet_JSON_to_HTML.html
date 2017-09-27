@@ -1,0 +1,161 @@
+<html>
+    <!-- Created by  Prince Chopra -->
+    <head>
+        <title>Homework 4</title>
+        <style>
+            table{
+                border-collapse: collapse;
+                border: 1px solid black;
+            }
+              table td{
+                border: 1px solid black;
+            }
+            #div1{
+                display: table;
+                margin: 0 auto;
+                margin-top: 80px;
+            }
+            #div2{
+                display: table;
+                margin: 0 auto;
+                font-weight: bold;
+            }
+            #div3{
+                display: table;
+                margin: 0 auto;
+            }
+            #div4{
+                font-size: 12px;
+                display: table;
+                margin: 0 auto;
+                background-color: gainsboro;
+                font-weight: bold;
+                border: 0.5px solid;
+                border-radius: 3px;
+                padding: 2px;
+                padding-left: 5px;
+                padding-right: 5px;
+                text-decoration: none;
+                border-color: grey;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="div1">
+            <div id="div2">Enter URL for Airlines List JSON File</div><br>
+            
+            <input id="div3" type="text"><br>
+            <button id="div4" type="button" onclick="readTextFile('airlinelist.json',function(text){
+                console.log(text);
+            })">Submit Query</button>
+        </div>
+        
+        <script type="text/javascript">
+            function fileExists(url)
+            {
+                var http = new XMLHttpRequest();
+                http.open('HEAD', url, false);
+                http.send();
+                return http.status!=404;
+            }
+            function readTextFile(file, callback) {
+                if(!fileExists(document.getElementById("div3").value)){
+                    alert('Invalid Filename!') //or some other suitable error/display mechanism
+                    return;
+                }
+                var rawFile = new XMLHttpRequest();
+                rawFile.overrideMimeType("application/json");
+                if (document.getElementById("div3").value != "") {
+
+                    rawFile.open("GET", document.getElementById("div3").value , false);
+                    rawFile.onreadystatechange = function() {
+                        if (rawFile.readyState === 4 && rawFile.status == "200") {
+                            var my_JSON_object;
+                            try {
+                                my_JSON_object = JSON.parse(rawFile.responseText);
+                            } catch (e) {
+                                alert("Not valid JSON!");
+                                return;
+                            }
+
+                            if(!my_JSON_object.hasOwnProperty('Mainline')){
+                                alert("No Mainline found");
+                                return;
+                            }
+                            if(!my_JSON_object.Mainline.hasOwnProperty('Table')){
+                                alert("No Table found");
+                                return;
+                            }
+                            
+                            var table = my_JSON_object.Mainline.Table;
+                            if(!table.hasOwnProperty('Header')){
+                                alert("No Header found");
+                                return;
+                            }
+                            if(!table.hasOwnProperty('Row')){
+                                alert("No Rows found");
+                                return;
+                            }
+                            var header = table.Header;
+                            var data = header.Data;
+                            
+                            
+                            
+                            var myWindow = window.open("", "", "width=1095, height=600");
+                            myWindow.document.write('<html><head><title>US Airlines Listings</title><style>table{border: 1px solid black;}table td{border: 1px solid black;}th{border: 1px solid black;}</style></head><body>');
+                            myWindow.document.write('<table><tr>');
+                            for(i=0;i<data.length;i++){
+                                myWindow.document.write('<th>');
+                                myWindow.document.write(data[i]);
+                                myWindow.document.write('</th>');
+                            }
+                            myWindow.document.write('</tr>');
+                            var rows = table.Row;
+                            for(i=0;i<rows.length;i++){
+                                myWindow.document.write('<tr><td>');
+                                myWindow.document.write(rows[i].Airline);
+                                myWindow.document.write("</td>");
+                                
+                                myWindow.document.write("<td>");
+                                myWindow.document.write(rows[i].IATA);
+                                myWindow.document.write("</td>");
+                                myWindow.document.write("<td>");
+                                if(rows[i].Hubs.hasOwnProperty('Hub') && rows[i].Hubs.Hub.length!=0){
+                                    myWindow.document.write("<ul>");
+                                    myWindow.document.write("<li><b>"+rows[i].Hubs.Hub[0]+"</b></li>");
+
+                                    for(j=1;j<rows[i].Hubs.Hub.length;j++){
+
+                                        myWindow.document.write("<li>"+rows[i].Hubs.Hub[j]+"</li>");
+
+                                    }
+                                    myWindow.document.write("</ul>");
+                                }
+                                myWindow.document.write("<td>");
+                                myWindow.document.write(rows[i].Notes);
+                                myWindow.document.write("</td>");
+                                myWindow.document.write("<td>");
+                                myWindow.document.write("<a href=\""+rows[i].HomePage+"\">"+rows[i].HomePage+"</a>");
+                                myWindow.document.write("</td>");
+                                myWindow.document.write("<td>");
+                                myWindow.document.write("<img height=\"150\" width=\"350\" src=\""+rows[i].Plane+"\"/>");
+                                myWindow.document.write("</td>");
+                                myWindow.document.write('</tr>');
+                            }
+                            myWindow.document.write('</table></body></html>');
+                            
+                            
+                            var table = my_JSON_object.Mainline.Table;
+                            var header = table.Header;
+                        }
+                    }
+                    rawFile.send(null);
+                }else{
+                    alert("Enter Text Area value");
+                }
+            }
+        
+        </script>
+    </body>
+
+</html>
