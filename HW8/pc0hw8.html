@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <title>Homework 8</title>
+      <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+      <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/angular_material/1.1.0/angular-material.min.css">
+      <link href="https://gitcdn.github.io/bootstrap-toggle/2.2.2/css/bootstrap-toggle.min.css" rel="stylesheet">
+      
+      <script data-require="angular.js@1.3.0" data-semver="1.3.0" src="https://code.angularjs.org/1.3.13/angular.js"></script>
+      <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular.min.js"></script>
+      <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular-route.min.js"></script>
+      <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.7/angular-resource.min.js"></script>
+      <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular-animate.min.js"></script>
+      <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular-aria.min.js"></script>
+      <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular-messages.min.js"></script>
+      <script src="https://ajax.googleapis.com/ajax/libs/angular_material/1.1.0/angular-material.min.js"></script>
+      <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+      <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+      <script src="https://gitcdn.github.io/bootstrap-toggle/2.2.2/js/bootstrap-toggle.min.js"></script>
+      <script src="https://code.highcharts.com/stock/highstock.js"></script>
+      <script src="https://code.highcharts.com/stock/modules/exporting.js"></script>
+      <script src="https://code.highcharts.com/modules/exporting.js"></script>
+      <script src="pc0hw8.js"></script>
+      
+   </head>
+
+   <style type="text/css">
+    body
+    {
+    background-color: rgb(40,91,122);
+    }
+    #jumbotronid
+    {
+        background-size: auto;
+        background-color: white;
+    }
+
+    #stocktbl
+    {
+        width:50%;
+    }
+
+    .yellowstar
+    {
+        color :yellow;
+        font-size: 20px;
+    }
+
+    .chartHeight{
+        min-height: 400px;
+    }
+
+    .image{
+        height: 30px;
+    }
+
+    .table>tbody>tr>td, .table>tbody>tr>th, .table>tfoot>tr>td, .table>tfoot>tr>th, .table>thead>tr>td, .table>thead>tr>th{
+                padding-top:20px;
+                padding-bottom: 20px;
+     }
+
+     .a{
+        text-decoration-style: none;
+     }
+
+    .size {
+                width:15px;
+                height:15px;
+            }
+    .space2{
+      font-weight: normal;
+    }
+
+    .error{
+        min-height: 50px !important;
+        line-height: 3;
+        background-color: #ECCFCF;
+        color: #B47080;
+        border-radius: 5px;
+        box-shadow: #B47080;
+        padding-left: 10px;
+    }
+
+     #orderBy, #filterBy{
+                background-color: white;
+                margin-left:30px;
+                height: 30px;
+                width:18%;
+            }
+
+    #favHead{
+        background-color: #f9f9f9 !important;   
+    }
+
+    .table-striped > tbody > tr:nth-child(even) > td,
+    .table-striped > tbody > tr:nth-child(even) > th {
+      background-color: #f9f9f9;    
+    }
+
+
+    .table-striped > tbody > tr:nth-child(odd) > td,
+    .table-striped > tbody > tr:nth-child(odd) > th {
+      background-color: #FFF;
+    }
+
+    #filter{
+        margin-bottom: 10px;
+    }
+
+    .red{
+        outline : solid 2px red;
+    }
+
+   </style>
+
+   <body ng-app="stockSearch" ng-cloak ng-controller="autoCompleteController as ctrl" style="background-image: url('http://cs-server.usc.edu:45678/hw/hw8/images/background.png')">
+      <div class="container" style="padding-top: 15px">
+         <div class="jumbotron" id="jumbotronid">
+            <h2 class="text-center"><b>Stock Market Search</b></h2>
+            <div class="form-group-sm" >
+               <div class="row">
+                  <div class="col-md-3">                    
+                     <label for="stocksymbol" required>Enter Stock Ticker Symbol:<sup style="color:red;">*</sup></label>
+                  </div>
+                  <div  class="col-sm-6" id="stock_text">
+                     <form name="myForm">
+                        <md-autocomplete
+                          required
+                          id ="autocomplete"
+                          ng-class="{red: myForm.autocomplete.$touched && myForm.autocomplete.$invalid}"
+                          md-input-name="autocomplete"
+                          ng-disabled = "ctrl.isDisabled"
+                          md-no-cache = "ctrl.noCache"
+                          md-selected-item = "ctrl.selectedItem"
+                          md-search-text-change = "ctrl.searchTextChange(ctrl.searchText)"
+                          md-search-text = "ctrl.searchText"
+                          md-selected-item-change = "ctrl.selectedItemChange(item)"
+                          md-items = "item in ctrl.querySearch(ctrl.searchText)"
+                          md-item-text = "item.value"
+                          md-min-length = "1"
+                          placeholder = "eg. AAPL"
+                          ng-blur = "ctrl.onBlur"
+                          ng-model="cntrl.selectedValue">
+                           <md-item-template>
+                              <span md-highlight-text = "ctrl.searchText"
+                                 md-highlight-flags = "^i">{{item.display}}</span>
+                           </md-item-template>
+                           <md-not-found>
+                              <!--
+                                 No states matching "{{ctrl.searchText}}" were found.
+                                 <a ng-click = "ctrl.newState(ctrl.searchText)">Create a new one!</a>
+                                   -->
+                           </md-not-found>
+                        </md-autocomplete>
+                         <div ng-messages="myForm.autocomplete.$invalid" ng-if="myForm.autocomplete.$touched">
+            <span style="font-size:14px;margin-left:0" ng-show="myForm.autocomplete.$touched && myForm.autocomplete.$invalid">Please enter a stock ticker symbol.</span>
+          </div>
+                     <!-- <div id="error" class='warning-text'>Please enter a stock ticker symbol.</div> -->
+                  </div>
+                  <button type="button" id="getquotebtn" class="btn btn-primary btn-md" ng-click="panelSwitch=true;" ng-disabled="myForm.autocomplete.$invalid" ><span class="glyphicon glyphicon-search"></span> Get Quote</button>&nbsp;<button type="button" id="clrbtn" class="btn btn-md" ng-click="clear();myForm.autocomplete.$touched=false" data-target="#stockcarousal" data-slide-to="0"><span class="glyphicon glyphicon-refresh"></span> Clear</button>
+                   </form>
+               </div>
+            </div>
+         </div>
+         <hr>
+         <div id="stockinfo">
+            <div class="well" style="background-color: #FFFFFF">
+               <!-- <div id="stockcarousal" class="carousel slide"> -->
+               <!-- Wrapper for slides -->
+               <div class="carousel-inner" role="listbox">
+                  <div id="favorites" class="animate-show-right" ng-hide="panelSwitch">
+                     <div class="panel panel-default">
+                        <!-- Default panel contents -->
+                        <div class="panel-heading" style="padding-bottom: 15px">
+                           Favorite List
+                           <button type="button" class="btn btn-default=default pull-right disabled" id="next" style="padding : 8x ; margin-left: 3px;" data-toggle="tooltip" data-placement="bottom" title="Get stock information" ng-click="panelSwitch=true">
+                           <span class="glyphicon glyphicon-chevron-right"></span>
+                           </button>
+                           &nbsp;
+                           <button type="button" class="btn btn-default=default pull-right" id="refresh" style="padding-bottom:  : 6px; margin-left: 3px;  " data-toggle="tooltip" data-placement="bottom" title="Refresh">
+                           <span class="glyphicon glyphicon-refresh"></span>
+                           </button>
+                           <div style="float : right; margin-bottom: -5px" data-toggle="tooltip" style="padding : 8px; margin: 3px;" data-placement="bottom">Automatic Refresh :
+                              <input type="checkbox" id="chkAutoRefresh" data-toggle="toggle" data-size="small">
+                           </div>
+                        </div>
+                        <div class="panel-body">
+                           <div id="filter">
+                              <span style="margin-left: 19px;"><b>Sort by</b></span>
+                              <span>
+                                 <select id="filterBy">
+                                    <option>Default</option>
+                                    <option>Symbol</option>
+                                    <option>Price</option>
+                                    <option>Change</option>
+                                    <option>Change Percent</option>
+                                    <option>Volume</option>
+                                 </select>
+                              </span>
+                              <span id="order" style="margin-left: 70px"><b>Order</b></span>
+                              <span>
+                                 <select disabled="true" id="orderBy" style="background-color: #efefef;">
+                                    <option>Ascending</option>
+                                    <option>Descending</option>
+                                 </select>
+                              </span>
+                           </div>
+                           <table class="table table-striped" id="favTable">
+                              <thead id="favHead">
+                                 <tr>
+                                    <th>Symbol</th>
+                                    <th>Stock Price</th>
+                                    <th>Change (Change Percent)</th>
+                                    <th>Volume</th>
+                                    <th></th>
+                                 </tr>
+                              </thead>
+                              <tbody id="fav"></tbody>
+                           </table>
+                        </div>
+                     </div>
+                  </div>
+                  <!--item carousal-->
+                  <!-- <div class="item" id="stockdetails"> -->
+                  <div class="animate-show-left" ng-show="panelSwitch" id="stockdetails">
+                     <div class="panel panel-default">
+                        <!-- Default panel contents -->
+                        <div class="panel-heading" style="padding-bottom: 15px">
+                           <button type="button" class="btn btn-default=default pull-left" id="previous" ng-click="panelSwitch=false">
+                           <span class="glyphicon glyphicon-chevron-left"></span>
+                           </button>
+                           <div class="text-center">
+                              <h4><b>Stock details</b></h4>
+                           </div>
+                        </div>
+                        <div class="panel-body" id="carousal2body">
+                           <div class="row">
+                              <div class="col-md-12">
+                                 <ul class='nav nav-tabs'>
+                                    <li class='active'>
+                                       <a href='#current_stock' data-toggle='tab'>
+                                          <caption>
+                                             <span class='glyphicon glyphicon-time'></span> Current Stock
+                                       </a>
+                                    </li>
+                                    <li><a href='#historical_charts' data-toggle='tab'><span class='glyphicon glyphicon-signal'></span> Historical Charts</a></li>
+                                    <li><a href='#news_feeds' data-toggle='tab'><span class='glyphicon glyphicon-link'></span> News Feeds</a></li>
+                                 </ul>
+                              </div>
+                           </div>
+                           <hr></hr>
+                           <div class="tab-content">
+                           <div class="tab-pane active" id="current_stock">
+                           <div class='row' style='padding:15px;'><div class='col-md-3'>Stock Details</caption></div>
+                           <div class='col-md-3'><button type="button" class="pull-right disabled" disabled id="fbbtn" style='background-color: white; border-color: lightgray; border-width: 1.5px; border-radius: 5px; width: 38px; height:38px; margin-left: 4px'><img src="http://cs-server.usc.edu:45678/hw/hw8/images/facebook.png" height='24px' width='26px' style=''></button><button type="button" class="pull-right disabled" disabled id="strbtn" style='padding: 5px;background-color: white; border-color: lightgray; border-width: 1.5px; border-radius: 5px;font-size: 20px;width: 38px;height: 38px;'><span class="glyphicon glyphicon-star-empty" id="star"></span></button></div>
+                           <div class="col-md-6">
+                           <ul id="chartsTab" class="nav nav-tabs">
+                           <li class="active"><a href="#Price" data-toggle="tab">Price</a></li>
+                           <li class=""><a href="#SMA" data-toggle="tab">SMA</a></li>
+                           <li class=""><a href="#EMA" data-toggle="tab">EMA</a></li>
+                           <li class=""><a href="#STOCH" data-toggle="tab">STOCH</a></li>
+                           <li class=""><a href="#RSI" data-toggle="tab">RSI</a></li>
+                           <li class=""><a href="#ADX" data-toggle="tab">ADX</a></li>
+                           <li class=""><a href="#CCI" data-toggle="tab">CCI</a></li>
+                           <li class=""><a href="#BBANDS" data-toggle="tab">BBANDS</a></li>
+                           <li class=""><a href="#MACD" data-toggle="tab">MACD</a></li>                      
+                           </ul>
+                           </div>                    
+                           <div id ="tabledata" class= "col-md-6" >                       
+                           </div>
+                           <div id="myData" class=" tab-content col-md-6 chartHeight">                      
+                           <div class="tab-pane active chartHeight " id="Price"  >
+                           </div>
+                           <div id="SMA" class="tab-pane chartHeight " >                      
+                           </div>
+                           <div id="EMA" class="tab-pane chartHeight">                      
+                           </div>
+                           <div id="STOCH" class="tab-pane chartHeight ">
+                           </div>
+                           <div id="RSI" class="tab-pane chartHeight ">
+                           </div>
+                           <div id="ADX" class="tab-pane chartHeight ">
+                           </div>
+                           <div id="CCI" class="tab-pane chartHeight ">
+                           </div>
+                           <div id="BBANDS" class="tab-pane chartHeight " >
+                           </div>                    
+                           <div id="MACD" class="tab-pane chartHeight ">
+                           </div>
+                           </div>
+                           </div>
+                           </div>
+                           <div class="tab-pane col-md-12" id="historical_charts" >                    
+                           </div>
+                           <div class="tab-pane col-md-12" id="news_feeds" >                    
+                           </div>                 
+                           </div><!--panel ends-->
+                        </div>
+                        <!--item ends-->
+                     </div>
+                     <!--carousal-inner end-->
+                  </div>
+                  <!--stockcarousal ends-->
+               </div>
+               <!--well ends-->
+            </div>
+         </div>
+      </div>
+      <!--fluid container div-->
+   </body>
+</html>

@@ -1,5 +1,71 @@
+    var value = "";
+    angular
+             .module('stockSearch', ['ngMaterial'])
+             .controller('autoCompleteController', autoCompleteController);
+ 
+          function autoCompleteController ($timeout, $q, $log,$scope, $http) {
+             var self = this;
+             self.simulateQuery = false;
+             self.isDisabled    = false;
+             self.querySearch   = querySearch;
+             self.selectedItemChange = selectedItemChange;
+             self.searchTextChange   = searchTextChange;
+             function querySearch (query) {
+                //if (filterSpace(query)){
+                  var deferred = $q.defer();
+                  var queryURL = 'http://pchw8-env.us-west-1.elasticbeanstalk.com/lookup/' + query;
+                  $log.info(queryURL);
+                  $http.get(queryURL).success(
+                    function(json){
+                        var result = [];
+                        for (var i in json){
+                            var item = {'value' : json[i].Symbol, 'display' : json[i].Symbol + ' - ' + json[i].Name + ' (' + json[i].Exchange +')'};
+                            result.push(item);
+                        } 
+                      deferred.resolve(result);
+                    }
+                  );
+                  return deferred.promise;
+              //}
+             }
+             function searchTextChange(text) {
+               
+             }
+             
+             function selectedItemChange(item) {
+                value = item.value;
+                $log.info('Item changed to ' + JSON.stringify(item));
+             }
+             function filterSpace(text){
+                if (text.trim() === ''){
+                  return false;
+                }else{
+                  return true;
+                }
+             }
+
+             $scope.getSelectedValue = function(){
+                value = self.selectedValue;
+            }
+             $scope.clear = function clear(){
+      self.selectedItemChange = "";
+        $scope.panelSwitch = false;
+        $scope.ctrl.searchText = null;
+    };
+    //         $scope.fetchData = function($event){
+    //         $log.info($event.currentTarget);
+    //         self.selectedItemChange = element.value;
+    //         // $scope.panelSwitch = false;
+    //         // $scope.ctrl.searchText = null;
+    // };
+
+         }
+
+   
     $( document ).ready(function() {
-       var LocalStorage = function() {
+     
+      var slide = false;
+     var LocalStorage = function() {
             this.store =  [];
 
             this.get = function(symbol) {
@@ -56,22 +122,29 @@
           if (tr.length == 0) {
             //build tr according to format
             console.log("symbol="+symbol);
-            tr = $('<tr style="display:none;" id="' + symbol + '"><td><a href="#" id="'+symbol+'_link" data-target="#stockcarousal" data-slide-to="1">'+symbol+'</a></td><td id="' +symbol+ '_price"></td><td id="' +symbol+ '_change"></td><td id="'+symbol+'_volume"></td><td><a href="#" id="' + symbol +'_remove"><div class="glyphicon glyphicon-trash"></div></a></td></tr>');
+            tr = $('<tr style="display:none;" id="' + symbol + '"><td><a href="#" id="'+symbol+'_link"  data-target="#stockcarousal" data-slide-to="1">'+symbol+'</a></td><td id="' +symbol+ '_price"></td><td id="' +symbol+ '_change"></td><td id="'+symbol+'_volume"></td><td><a href="#" id="' + symbol +'_remove"><div class="glyphicon glyphicon-trash"></div></a></td></tr>');
             $('#fav').append(tr);
 
             $('#' + symbol + '_remove').click(function() {
               $(this).parents('tr').remove();
               ls.remove(symbol);
+              if(ls.store.length==0){
+                 $('#next').addClass("disabled");
+                 $('#next').prop("disabled", true);
+              }
             });
 
             $('#'+ symbol+'_link').click(function(){
-              getquotedata(symbol);
+              value =symbol;
+             $("#getquotebtn").removeAttr('disabled')
+              $("#getquotebtn")[0].click();
             });
       
           }
     };
 
-    var updateFavorite = function(symbol, data) {        
+    var updateFavorite = function(symbol, data) {     
+    if(data.hasOwnProperty('Meta Data') && data.toString().indexOf("Error") <=-1) {      
       var keys = Object.keys(data["Time Series (Daily)"]);
       var current = data["Time Series (Daily)"][keys[0]];
       var past = data["Time Series (Daily)"][keys[1]];   
@@ -100,11 +173,12 @@
           $('#' + symbol + '_volume').html(volume);
 
           $('#' + symbol).show();
+    }
     };
 
     var ajaxRequest  = function (symb)
     {
-      var symburl=  "http://shrushtpwebtechhw8-env.us-east-2.elasticbeanstalk.com/?symbol="+symb+"&type=Price";;
+      var symburl=  "http://pchw8-env.us-west-1.elasticbeanstalk.com/?symbol="+symb+"&type=Price";;
       
       $.ajax({
         type : 'GET',
@@ -430,16 +504,46 @@
             }
         }
     }
-           
- 
 
     $("button#getquotebtn").click(function(){
-      textipdata = document.getElementById("stock_text").value.trim(); 
-      if(textipdata=="") {
-        document.getElementById('error').innerHTML="Please enter a stock ticker symbol";
-        return;
-      }
-      document.getElementById('error').innerHTML="";
+     textipdata = value; 
+     if(textipdata==""){
+      //document.getElementById('error').innerHTML="Please enter a stock ticker symbol."; 
+      //document.getElementById('stock_text').style = "border-Color: red";      
+     } else{
+     // document.getElementById('error').innerHTML="";
+     $('#fbbtn').addClass("disabled");
+      $('#fbbtn').prop("disabled", true);
+      $('#strbtn').addClass("disabled");
+      $('#strbtn').prop("disabled", true);
+       $('#star').removeClass("yellowstar");
+                 $('#star').removeClass("glyphicon-star");
+                $('#star').addClass("glyphicon-star-empty");
+      document.getElementById('stock_text').style = "border-Color: black";      
+       $("#tabledata").removeClass('error');
+               $("#tabledata").html("");
+                $("#Price").html("");
+               $("#Price").removeClass('error');
+               $("#SMA").html("");
+               $("#SMA").removeClass('error');
+               $("#EMA").html("");
+               $("#EMA").removeClass('error');
+               $("#STOCH").html("");
+               $("#STOCH").removeClass('error');
+               $("#RSI").html("");
+               $("#RSI").removeClass('error');
+               $("#ADX").html("");
+               $("#ADX").removeClass('error');
+               $("#CCI").html("");
+               $("#CCI").removeClass('error');
+               $("#BBANDS").html("");
+               $("#BBANDS").removeClass('error');
+               $("#MACD").html("");
+               $("#MACD").removeClass('error');
+                $("#news_feeds").removeClass('error');
+                $("#news_feeds").html('');
+            $("#historical_charts").removeClass('error');
+             $("#historical_charts").html('');     
       var html = '<div class="progress"><div class="progress-bar progress-bar-striped progress-bar-animated active" role="progressbar" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100" style="width: 50%"></div></div>';
       $("#tabledata").html( html);
       $("#Price").html( html);
@@ -453,9 +557,6 @@
       $("#MACD").html( html);
       $("#historical_charts").html( html);
       $("#news_feeds").html( html);
-      
-      // $("#progress").html( html);
-     
       getquotedata(textipdata, "Price");            
       getquotedata(textipdata, "SMA");
       getquotedata(textipdata, "EMA");
@@ -465,62 +566,84 @@
       getquotedata(textipdata, "CCI");
       getquotedata(textipdata, "BBANDS");
       getquotedata(textipdata, "MACD");
+    }
     });
 
-    function displayStockData(type,data){
-       if(!data.hasOwnProperty('Meta Data') || data.toString().indexOf("Error") >-1) {
+    function getAttributeByIndex(obj, index){
+        var i = 0;
+        for (var attr in obj){
+            if (index === i){
+                return obj[attr];
+            }
+            i++;
+        }
+        return null;
+    }
+
+    function formatNumber (num) {
+        return num.toString().replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1,")
+    }
+
+    function displayNewsTable(type,data){      
+      if(!data.hasOwnProperty('Meta Data') || data.toString().indexOf("Error") >-1) {
         $("#tabledata").addClass('error');
         $("#tabledata").html( "Error! Failed to get current stock data.");
       } else {
           $("#tabledata").removeClass('error');
-      var html = "";
-      var keys = Object.keys(data["Time Series (Daily)"]);
-      var current = data["Time Series (Daily)"][keys[0]];
-      var past = data["Time Series (Daily)"][keys[1]];   
-      var currentclose = parseFloat(current['4. close']).toFixed(2);
-      var pastclose = parseFloat(past['4. close']).toFixed(2);
-      var change = (currentclose - pastclose).toFixed(2);
-      var percent = (change / pastclose * 100).toFixed(2);
-      var date = data["Meta Data"]["3. Last Refreshed"];
-      var volume = ""+current['5. volume'];
-      volume = volume.replace(/(\d)(?=(\d\d\d)+(?!\d))/g, "$1,");
-      if(date.length<12) date = date + " 16:00:00"; 
+          var html = ""
+          var keys = Object.keys(data["Time Series (Daily)"]);
+          var current = data["Time Series (Daily)"][keys[0]];
+          var past = data["Time Series (Daily)"][keys[1]];   
+          var currentclose = Number(current['4. close']).toFixed(2);
+          var pastclose = Number(past['4. close']).toFixed(2);
+          var change = (currentclose - pastclose).toFixed(2);
+          var percent = (change / pastclose * 100).toFixed(2); 
 
-      html+= '<table id = "stockTable" class="table table-striped"><tr><td class ="space1">Stock Ticker Symbol</td><td class = "space2">'+data["Meta Data"]["2. Symbol"]+'</td></tr>';
-      html+= '<tr><td class = "space1">Last Price</td><td class = "space2">'+currentclose+'</td></tr>';      
-      // html+= '<tr><td class = "space1">Change Percent</td><td class = "space2">'+percent+'%';
-      if (percent < 0) {
-          html+= '<tr><td class = "space1">Change (Change Percent)</td><td class = "space2"><font color="#FF0000">'+change+' ('+percent+'%)&nbsp;</font>';
-          html+= '<img class="arrows" src = "http://cs-server.usc.edu:45678/hw/hw6/images/Red_Arrow_Down.png" class = "image"></td></tr>';
-      } else {
-          html+= '<tr><td class = "space1">Change (Change Percent)</td><td class = "space2"><font color="#00FF00">+'+change+' (+'+percent+'%)&nbsp;</font>';
-          html+= '<img class="arrows" src = "http://cs-server.usc.edu:45678/hw/hw6/images/Green_Arrow_Up.png" class = "image"></td></tr>';
-      }
-      html+= '<tr><td class = "space1">Timestamp</td><td class = "space2">'+date+' EDT</td></tr>';                
-      html+='<tr><td class = "space1">Open</td><td class = "space2">'+parseFloat(current['1. open']).toFixed(2)+'</td></tr>';
-      html+= '<tr><td class = "space1">Close</td><td class = "space2">'+parseFloat(past['4. close']).toFixed(2)+'</td></tr>';
-      html+='<tr><td class = "space1">Day\'s Range</td><td class = "space2">'+parseFloat(current['3. low']).toFixed(2)+' - '+parseFloat(current['2. high']).toFixed(2)+'</td></tr>';
-      html+= '<tr><td class = "space1">Volume</td><td class = "space2">'+volume+'</td></tr>';
-      html+= '</table>';             
-      //.date('Y-m-d', strtotime($data->{'Meta Data'}->{'3. Last Refreshed'})).
-      //date_default_timezone_set($data->{'Meta Data'}->{'5. Time Zone'});
-      $("#tabledata").html( html);
+          html+= '<table id = "stockTable" class="table table-striped"><tr><td class ="space1" >Stock Ticker Symbol</td><td class = "space2" id="StockName">'+data["Meta Data"]["2. Symbol"]+'</td></tr>';
+          html+= '<tr><td class = "space1" >Last Price</td><td class = "space2" id="StockPrice">'+currentclose+'</td></tr>';      
+        
+          if (currentclose > pastclose) {
+              var change = (currentclose - pastclose).toFixed(2);
+              var percent = (change / pastclose * 100).toFixed(2); 
+              html+= '<tr><td class = "space1" >Change (Change Percent)</td><td class = "space2" id="StockChange" style="color : green;"">'+change+' ('+percent+'%) ';
+              html+= '<img class="size" src = "http://cs-server.usc.edu:45678/hw/hw6/images/Green_Arrow_Up.png" class = "image"></td></tr>';
+          } else {
+              var change = (currentclose-pastclose).toFixed(2);
+              var percent = (change / pastclose * 100).toFixed(2); 
+              html+= '<tr><td class = "space1">Change (Change Percent)</td><td class = "space2" id="StockChange" style="color : red;">'+change+' ('+percent+'%) ';
+              html+= '<img class="size" src = "http://cs-server.usc.edu:45678/hw/hw6/images/Red_Arrow_Down.png" class = "image"></td></tr>'; 
+          }
+          html+= '<tr><td class = "space1">Timestamp</td><td class = "space2">'+keys[0]+ " " + "16:00:00 EDT"+'</td></tr>';                
+          html+='<tr><td class = "space1">Open</td><td class = "space2">'+Number(current['1. open']).toFixed(2)+'</td></tr>';
+          html+= '<tr><td class = "space1">Close</td><td class = "space2">'+pastclose+'</td></tr>';
+          html+='<tr><td class = "space1">Day\'s Range</td><td class = "space2">'+Number(current['3. low']).toFixed(2)+' - '+Number(current['2. high']).toFixed(2)+'</td></tr>';
+          html+= '<tr><td class = "space1">Volume</td><td class = "space2" id="StockVolume">'+formatNumber(Number(current['5. volume']))+'</td></tr>';
+          html+= '</table>';             
 
+          $("#tabledata").html( html);
+           $('#fbbtn').removeClass("disabled");
+          $('#fbbtn').prop("disabled", false);
+          $('#strbtn').removeClass("disabled");
+          $('#strbtn').prop("disabled", false);
+          $("#strbtn").off("click");  
           $('#strbtn').click(function(event) {
             console.log("Clickd Favorite");
             if($('#star').hasClass("yellowstar")) {
                 $('#star').removeClass("yellowstar");
-                $('#star').addClass("whitestar");
-                ls.remove(document.getElementById("stock_text").value.trim()); 
-                event.stopPropagation();
+                 $('#star').removeClass("glyphicon-star");
+                $('#star').addClass("glyphicon-star-empty");
+                ls.remove(value); 
             } else {
                 $('#star').addClass("yellowstar");
-                appendToFavorite(document.getElementById("stock_text").value.trim());
-                ls.set(document.getElementById("stock_text").value.trim(), data);
-                updateFavorite(document.getElementById("stock_text").value.trim(), data);
-                event.stopPropagation();
+                $('#star').addClass("glyphicon-star");
+                $('#star').removeClass("glyphicon-star-empty");
+                appendToFavorite(value);
+                ls.set(value, data);
+                updateFavorite(value, data);
+                
               }
           });
+
            $("#fbbtn").click(function() { 
                 var obj = {}, chart;
                 chart = $("#"+$("ul#chartsTab li.active")[0].innerText).highcharts();
@@ -540,89 +663,91 @@
         });    
       });
       }
+
     }
 
     function displayPriceChart(type,data){
-    if(!data.hasOwnProperty('Meta Data') || data.toString().indexOf("Error") >-1) {
+       if(!data.hasOwnProperty('Meta Data') || data.toString().indexOf("Error") >-1) {
         $("#"+type).addClass('error');
         $("#"+type).html( "Error! Failed to get "+type+" data.");
       } else {
         $("#"+type).removeClass('error');
-
-      var date = [];
-      var volume = [];
-      var closeValue = [];
-      var i = 0;
-            
-      for(var key in data["Time Series (Daily)"]){
-            var numOfDate = key.split(" ");
-                numOfDate = numOfDate[0].split("-");
-                date[i] = numOfDate[1] + "/" + numOfDate[2];
-                var value = parseFloat(data["Time Series (Daily)"][key]["4. close"]);
-                closeValue[i] = value;
-                volume[i] = parseInt(data["Time Series (Daily)"][key]["5. volume"]);
-                i++;
-      }
-      date = date.slice(0, 121);
-      closeValue = closeValue.slice(0, 121);
-      volume = volume.slice(0, 121);
-
-      var maxVolume = (Math.max.apply(null, volume));
-
-      Highcharts.chart(type, {
-          chart: {
-              zoomType: 'x',
-              height: 400,                                        
-              borderColor: '#D1D0CE',
-              borderWidth: 1
-          },
-          plotOptions: {
-            area: {
-                
-                fillOpacity: 0.1
-            }
-        },
-          title: {
-              text: document.getElementById("stock_text").value+" Stock Price and Volume"
-          },
-          subtitle: {
-              useHTML: true,
+       var inputDatePrice = Date.now() - 24 * 3600000 * 99;
+        var obj1 = data['Time Series (Daily)'];
+        var closeArray = [];
+        var volumeArray = [];
+        for(var i = 0; i < 100; i++){
+            closeArray.push(getAttributeByIndex(obj1,i)['4. close']);
+            volumeArray.push(Number(getAttributeByIndex(obj1,i)['5. volume'])/1000000);
+        }
+        closeArray = closeArray.map(Number);
+        volumeArray = volumeArray.map(Number);
+        closeArray.reverse();
+        volumeArray.reverse();
+       Highcharts.chart(type, {
+            chart: {
+                borderColor: '#d8d8d8',
+                borderWidth: 1
+            },
+            title: {
+                text: value + " Stock Price and Volume"
+            },
+            subtitle: {
+                useHTML: true,
               text: "<a href ='https://www.alphavantage.co' target='_blank'>Source: Alpha Vantage</a>"
-          },
-          xAxis: [{
-              reversed: true,
-              tickInterval: 5,
-              categories: date
-          }],
-          yAxis: [{ 
-
-                  title: {
-                      text: 'Stock Price'
-                  },
-                  min: 0
-              }, {
-                  title: {
-                      text: 'Volume',
-                  },
-                  max: maxVolume,
-                  opposite: true
-          }],
-
-          series: [{
-              name: "Price",
-              type: 'area',
-              data: closeValue,
-              tooltip: {
-                  valueDecimals:2
-              },
-              color: '#0101FF'
-          }, {  
-              name: "Volume",
-              type: 'column',
-              data: volume,
-              yAxis: 1,
-              color: '#FF0000'
-          }]
+            },
+            tooltip:{
+                valueDecimals: 2,
+                xDateFormat: '%m/%d'
+            },
+            xAxis : [{
+                type: 'datetime',
+                labels: {
+                    format: '{value:%m/%d}'
+                },
+                tickInterval: 5
+            }],
+            yAxis: [{
+                title: {
+                    text: 'Stock Price'
+                },
+                tickInterval: 50
+            },{
+                labels: {
+                    format: '{value}M'
+                },
+                title: {
+                    text: 'Volume'
+                },
+                opposite: true,
+                tickInterval: 20
+            }],
+            series: [{
+                type: 'area',
+                name: 'Price',
+                pointInterval: 24 * 3600000,
+                lineColor: 'blue',
+                tooltip: {
+                    valueDecimals: 2,
+                },
+                marker: {
+                    enabled: false,
+                    fillColor: 'blue'
+                },
+                pointStart: inputDatePrice,
+                data: closeArray
+            }, {
+                type: 'column',
+                yAxis: 1,
+                name: 'Volume',
+                color: 'red',
+                pointInterval: 24 * 3600000,
+                pointStart: inputDatePrice,
+                data: volumeArray,
+                tooltip: {
+                    valueSuffix: 'M'
+                }
+            }]
         });
      }
     }
@@ -677,8 +802,7 @@
                     title: {
                         text: type
                     }
-                }],
-                
+                }],               
                 series: [{
                     name: data["Meta Data"]["1: Symbol"] + " Real Middle Band",
                     data:  middle,
@@ -692,7 +816,8 @@
                     data:  lower,
                     color:'#FF0001'
                 }]
-            })                 
+            });
+
         }                 
     }
 
@@ -743,9 +868,7 @@
                           text: type
                       },
                       tickInterval:10
-                  }],
-                  
-                  
+                  }],                  
                   series: [{
                       name: data["Meta Data"]["1: Symbol"] + " SlowK",
                       data:  slowK,
@@ -815,9 +938,7 @@
                       title: {
                           text: type
                       }
-                  }],
-                  
-                  
+                  }],                
                   series: [{
                       name: data["Meta Data"]["1: Symbol"] + " MACD",
                       data:  macd,
@@ -832,7 +953,7 @@
                       color: '#FF0001'
                   }]
               })
-    }
+            }
     }
 
     function displayOtherChart(type,data) {
@@ -877,9 +998,7 @@
                         title: {
                             text: type
                         }
-                    }],
-                    
-                    
+                    }],                
                     series: [{
                         name: data["Meta Data"]["1: Symbol"],
                         data:  results
@@ -891,6 +1010,10 @@
     function getquotedata(symboldata, type) {
               var URL = "http://pchw8-env.us-west-1.elasticbeanstalk.com/?symbol="+symboldata+"&type="+type;
               var responsedata='';
+              
+
+
+
               $.ajax(
               {
 
@@ -901,14 +1024,13 @@
                 {
                   if(true)//data['Status']=="SUCCESS"
                   {
-
                     tempdata=data;
                     $('#next').removeClass("disabled");
                     $('#next').prop("disabled", false);
                     console.log(data);
                     if(type=="Price"){
                       displayPriceChart(type,data);
-                      displayStockData(type,data);
+                      displayNewsTable(type,data);
                       getnewsData();
                       getHistoricalData();
                     } else if(type=="STOCH"){
@@ -922,15 +1044,13 @@
                     }                  
 
                     if(ls.store.indexOf(symboldata) != -1) {
-                              $('#star').removeClass("whitestar")
-                              $('#star').addClass("yellowstar");
+                            $('#star').addClass("yellowstar");
+                $('#star').addClass("glyphicon-star");
+                $('#star').removeClass("glyphicon-star-empty");
                           }
-                          
-                   
-                     
                   }  
                   else {
-                    document.getElementById('error').innerHTML="Select Valid Entry";
+                    document.getElementById('error').innerHTML="Select Valid Entry";                
                   }
 
               }
@@ -941,14 +1061,14 @@
        $.ajax(
             {
               type : 'GET',
-              url : "http://pchw8-env.us-west-1.elasticbeanstalk.com/news/"+document.getElementById("stock_text").value+"?symbol="+document.getElementById("stock_text").value,       
+              url : "http://pchw8-env.us-west-1.elasticbeanstalk.com/news/"+value+"?symbol="+value,      
               dataType : "json",          
               success : function(data)
               {
                 if(!data.hasOwnProperty('rss') || data.toString().indexOf("Error") >-1) {
                   $("#news_feeds").addClass('error');
                   $("#news_feeds").html( "Error! Failed to get news feed data.");
-                }else{
+                } else {
                 $("#news_feeds").removeClass('error');
                 var arr = data["rss"]["channel"][0]["item"];
                 var news="";
@@ -965,37 +1085,36 @@
                   }
                           document.getElementById("news_feeds").innerHTML = news;
               }
-              }
+            }
 
-            });
+            }); 
     }
 
     function getHistoricalData(){
           $.ajax({
-            url : "http://pchw8-env.us-west-1.elasticbeanstalk.com/highstockip/"+document.getElementById("stock_text").value+"?symbol="+document.getElementById("stock_text").value,
+            url : "http://pchw8-env.us-west-1.elasticbeanstalk.com/highstockip/"+value+"?symbol="+value,
             dataType : "json",
             success : function(data)
             {
+
               window.hidata = data;
-              window.ipdata = document.getElementById("stock_text").value;
-              drawHistoricalChart(hidata,document.getElementById("stock_text").value);
+              drawHistoricalChart(hidata,value);
             }
 
           });//histock ajax fn ends               
 
     } 
   
-    $("button#clrbtn").click(function()
-    {
+    $("button#clrbtn").click(function() {
       $("#stock_text").val("");
-      $('#next').removeClass("disabled");
+      $('#next').addClass("disabled");
       $('#next').prop("disabled", true);
-      $('#previous')[0].click();
+     
 
     });
   
     function drawHistoricalChart (data, symbol) {
-      if(!data.hasOwnProperty('Meta Data') || data.toString().indexOf("Error") >-1) {
+      if(!data.hasOwnProperty('Dates') || data.toString().indexOf("Error") >-1) {
         $("#historical_charts").addClass('error');
         $("#historical_charts").html( "Error! Failed to get historical charts data.");
       } else {
@@ -1033,17 +1152,12 @@
         var series = getOHLC(data);
         //display series
         $('#historical_charts').highcharts('StockChart', {
-
           title: {
             text: symbol + ' ' + 'Stock Value'
           },
-          rangeSelector: {
-            selected: 1
-        },
-
           subtitle: {
             useHTML: true,
-            text: "<a href = 'https://www.alphavantage.co' target='_blank'>Source: Alpha Vantage</a>"
+            text: '<a href="https://www.alphavantage.co/" target="_blank">Source: Alpha Vantage</a>'
           },
           xAxis: {
             type: 'datetime'
@@ -1054,7 +1168,7 @@
               text: 'Stock Value'
             }
           }],
-          tooltip: {
+           tooltip: {
                     crosshairs: [false,false],
                     split: false
                 },
@@ -1068,7 +1182,6 @@
               valuePrefix: '$',
             }
           }],
-        
           rangeSelector: {
             buttons: [{
               type: 'week',
@@ -1098,10 +1211,12 @@
               text: 'All'
             }],
             selected: 0,
-            
-          }
+            //inputEnabled : false
+          },
 
         });  
+      }
     }
+             
 
     });

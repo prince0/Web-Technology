@@ -1,0 +1,24 @@
+{
+  "name": "pchw8-env",
+  "version": "1.0.0",
+  "description": "stock",
+  "main": "app.js",
+  "dependencies": {
+    "request": "^2.83.0",
+    "url": "^0.11.0",
+    "xml2js": "^0.4.19",
+    "express": "4.15.4"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "start": "node app.js",
+    "lint": "samples lint",
+    "pretest": "npm run lint",
+    "system-test": "samples test app",
+    "test": "npm run system-test",
+    "e2e-test": "samples test deploy"
+  },
+  "keywords": [
+    "stock"
+  ]
+}
